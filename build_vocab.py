@@ -2,7 +2,7 @@ from collections import Counter
 import numpy as np
 
 # Hyper parameters for the vocab
-UNK_WORD = 'UNK'
+UNK_WORD = '<UNK>'
 
 def create_corpus(path: str):
     with open(path) as f:
@@ -19,4 +19,4 @@ def create_corpus(path: str):
     word_freqs = word_counts / np.sum(word_counts)
     word_freqs = word_freqs ** (3./4.)
 
-    return text, idx2word, word2idx, word_freqs, word_freqs
+    return text, idx2word, word2idx, word_freqs, word_counts

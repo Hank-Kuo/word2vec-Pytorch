@@ -1,10 +1,11 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class Net(nn.Module):
     def __init__(self,vocab_size,emb_size):
-        super(Word2Vec,self).__init__()
+        super(Net,self).__init__()
 
         self.vocab_size = vocab_size
         self.emb_size = emb_size

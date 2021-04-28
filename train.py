@@ -1,13 +1,15 @@
 import argparse
+import os
+from tqdm import tqdm
 
 import torch
 from torch.utils import data as torch_data
 import torch.optim as optim
 from torch.utils import tensorboard
 
-from model.net import Net
+import model.net as net
 import utils
-from model.data_loader import data_loader
+import model.data_loader as data_loader
 from build_vocab import create_corpus
 
 parser = argparse.ArgumentParser()
@@ -32,21 +34,23 @@ if __name__ == '__main__':
     params.device = torch.cuda.is_available()
     
     torch.manual_seed(230)
-    if params.cuda:
+    if params.device:
         torch.cuda.manual_seed(230)
 
     # dataset
-    text, word2idx, idx2word, word_freqs, word_counts = create_corpus('./questions.txt')
+    data_path = os.path.join(args.dataset_path, 'questions.txt')
+    text, idx2word, word2idx, word_freqs, word_counts = create_corpus(data_path)
     train_set = data_loader.DataLoader(text, word2idx, idx2word, word_freqs, word_counts)
     dataloader = torch_data.DataLoader(train_set, batch_size=params.batch_size, shuffle=True)
     print("corpus: {}".format(len(idx2word)))
     del text
     
     # model 
-    model = net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim).cuda() if params.cuda else net.Net(params)
+    # model = net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim)
+
+    model = net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim).cuda() if params.device else net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim)
+    
     optimizer = optim.SGD(model.parameters(), lr = params.learning_rate)
-    model.train()
-    model = model.to(params.device)
     summary_writer = tensorboard.SummaryWriter(log_dir=args.tensorboard_log_dir)
     step = 0
     start_epoch_id = 1
@@ -57,6 +61,7 @@ if __name__ == '__main__':
     for epoch_id in range(start_epoch_id, params.epochs + 1):
         print("Epoch {}/{}".format(epoch_id, params.epochs))
         loss = 0
+        model.train()
         with tqdm(total=len(dataloader)) as t:
             for i, (input_labels, pos_labels, neg_labels) in enumerate(dataloader):
                 input_labels = input_labels.long().to(device)
@@ -74,7 +79,7 @@ if __name__ == '__main__':
             t.update()
 
         if epoch_id % 50 == 0:          
-            utils.save_checkpoint(checkpoint_path, model, optimizer, epoch_id, step, loss)
+            utils.save_checkpoint(args.checkpoint_path, model, optimizer, epoch_id, step, loss)
     
         
 

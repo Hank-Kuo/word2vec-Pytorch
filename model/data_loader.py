@@ -1,4 +1,5 @@
 from torch.utils import data
+import torch
 
 C = 3 # context window
 K = 15 # number of negative samples
@@ -11,7 +12,7 @@ class DataLoader(data.Dataset):
             word_freqs: the frequency of each word
             word_counts: the word counts
         '''
-        super(WordEmbeddingDataset, self).__init__()
+        super(DataLoader, self).__init__()
         self.text_encoded = [word2idx.get(word, word2idx['<UNK>']) for word in text] # 把單詞數字化表示。如果不在詞典中，也表示為unk
         self.text_encoded = torch.LongTensor(self.text_encoded) # nn.Embedding需要傳入LongTensor型別
         self.word2idx = word2idx
@@ -41,7 +42,7 @@ class DataLoader(data.Dataset):
         return center_words, pos_words, neg_words
     
     @staticmethod
-    def _to_idx(key: str, mapping: Mapping) -> int:
+    def _to_idx(key: str, mappinp) -> int:
         try:
             return mapping[key]
         except KeyError:
