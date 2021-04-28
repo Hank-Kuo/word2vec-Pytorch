@@ -64,9 +64,9 @@ if __name__ == '__main__':
         model.train()
         with tqdm(total=len(dataloader)) as t:
             for i, (input_labels, pos_labels, neg_labels) in enumerate(dataloader):
-                input_labels = input_labels.long().to(device)
-                pos_labels = pos_labels.long().to(device)
-                neg_labels = neg_labels.long().to(device)
+                input_labels = input_labels.long().to(parmas.device)
+                pos_labels = pos_labels.long().to(parmas.device)
+                neg_labels = neg_labels.long().to(parmas.device)
                 optimizer.zero_grad()
                 loss = model(input_labels, pos_labels, neg_labels).mean()
                 loss.backward()
