@@ -18,7 +18,7 @@ parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
 parser.add_argument('--dataset_path', default='./data',
                     help="Path to dataset.")
-parser.add_argument('--checkpoint_path', default='./experiments/checkpoint',
+parser.add_argument('--checkpoint_path', default='experiments/checkpoint',
                     help="Path to model checkpoint (by default train from scratch).")
 parser.add_argument('--tensorboard_log_dir', default='./experiments/log',
                     help="Path for tensorboard log directory.")
@@ -30,9 +30,13 @@ if __name__ == '__main__':
     assert os.path.isfile(
         json_path), "No json configuration file found at {}".format(json_path)
     
+    utils.check_dir(FLAGS.checkpoint_path)
+    utils.check_dir(FLAGS.tensorboard_log_dir)
+
     params = utils.Params(json_path)
-    params.device = torch.cuda.is_available()
-    
+    params.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    checkpoint_path = os.path.join(args.checkpoint_path, "checkpoint.tar")
+
     torch.manual_seed(230)
     if params.device:
         torch.cuda.manual_seed(230)
@@ -46,10 +50,7 @@ if __name__ == '__main__':
     del text
     
     # model 
-    # model = net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim)
-
-    model = net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim).cuda() if params.device else net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim)
-    
+    model = net.Net(vocab_size=len(idx2word), emb_size=params.embedding_dim).cuda().to(params.device) 
     optimizer = optim.SGD(model.parameters(), lr = params.learning_rate)
     summary_writer = tensorboard.SummaryWriter(log_dir=args.tensorboard_log_dir)
     step = 0
@@ -64,9 +65,9 @@ if __name__ == '__main__':
         model.train()
         with tqdm(total=len(dataloader)) as t:
             for i, (input_labels, pos_labels, neg_labels) in enumerate(dataloader):
-                input_labels = input_labels.long().to(parmas.device)
-                pos_labels = pos_labels.long().to(parmas.device)
-                neg_labels = neg_labels.long().to(parmas.device)
+                input_labels = input_labels.long().to(params.device)
+                pos_labels = pos_labels.long().to(params.device)
+                neg_labels = neg_labels.long().to(params.device)
                 optimizer.zero_grad()
                 loss = model(input_labels, pos_labels, neg_labels).mean()
                 loss.backward()
@@ -79,7 +80,7 @@ if __name__ == '__main__':
             t.update()
 
         if epoch_id % 50 == 0:          
-            utils.save_checkpoint(args.checkpoint_path, model, optimizer, epoch_id, step, loss)
+            utils.save_checkpoint(checkpoint_path, model, optimizer, epoch_id, step, loss)
     
         
 
